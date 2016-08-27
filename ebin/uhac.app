@@ -1,0 +1,10 @@
+{application,uhac,
+             [{description,[]},
+              {vsn,"1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,inets]},
+              {mod,{uhac_app,[]}},
+              {env,[{extprog,"OpenCVTest"},{timeout,30000},{maxline,100}]},
+              {modules,[tcp_receiver,tcp_receiver_enroll,
+                        tcp_receiver_enroll_sup,tcp_receiver_sup,uhac_app,
+                        uhac_port,uhac_sup]}]}.

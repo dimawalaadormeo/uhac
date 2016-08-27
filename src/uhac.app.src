@@ -1,0 +1,13 @@
+{application, uhac,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+		 inets
+                 ]},
+  {mod, { uhac_app, []}},
+ {env, [{extprog, "OpenCVTest"}, {timeout, 30000}, {maxline, 100}]}
+ ]}.
