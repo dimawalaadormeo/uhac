@@ -15,7 +15,7 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+	 terminate/2, code_change/3,call_url/2]).
 
 -export([check_face/1]).
 
@@ -96,11 +96,9 @@ handle_call({enrollface, Msg}, _From, #state{port = Port} = State) ->
     port_command(Port,Message),
     case collect_response(Port) of
         {response, Response} -> 
-         [Acct,Confidence|_Rest] =  binary:split(Bin,<<",">>, [global]),
-           {ok,Result} =  http:request(post, {"http://www.google.com/",[],
-					      "application/x-www-form-urlencoded","acct="++
-						  binary_to_list( Acct)++"&uname="++binary_to_list(Confidence) },
-				               [], []),
+         [Acct,_Confidence,Uname,MSISDN|_Rest] =  binary:split(Response,<<",">>, [global]),
+	     {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} = call_url(enroll,{Acct,Uname,MSISDN}),
+	    
 	    
             
             {reply, Response, State};
@@ -205,4 +203,14 @@ collect_response(Port)->
 	 _X -> io:fwrite(_X)
     end.
 
+call_url(enroll,Data) ->
+     {Acct,Uname,MSISDN} = Data,
+     httpc:request(post, {"http://192.168.254.6/uhack/acct.php",[],
+					      
+"application/x-www-form-urlencoded","acct="++
+						  binary_to_list(Acct)++"&uname="++binary_to_list(Uname) ++"&msisdn=" 
+					     ++ binary_to_list(MSISDN)  },
+		  [],[]);
+call_url(verified,Data) ->
+         Data.
 

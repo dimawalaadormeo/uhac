@@ -52,13 +52,10 @@ loop(Sock) ->
         io:format("Got packet: ~p~n", [Data]),
         %%gen_tcp:send(Socket, Data),
       
-         {P1,P2,P3} = erlang:timestamp(),
-        FileName = integer_to_list(P1) ++ integer_to_list(P2) ++ integer_to_list(P3) ++ ".jpg",
-        {ok, File} = file:open(FileName, [append, binary]),
-         ok = file:write(File,Data),
-         loop(Socket,File),
+         File = "",
+       %%  loop(Socket,File),
          %% put identification trigger here
-	 FeedBack =  uhac_port: check_face({enroll,FileName}),
+	 FeedBack =  uhac_port: check_face({enroll,Data}),
          gen_tcp:send(Socket,FeedBack)
           ;
     {tcp_closed, Socket}->
@@ -73,8 +70,8 @@ loop(Sock,File) ->
     {tcp,_Socket,<<"DONE">>} -> file:close(File);
          
     {tcp, Socket, Data} ->
-        io:format("Got packet: ~p~n", [Data]),
-        %%gen_tcp:send(Socket, Data),
+       
+        
         
          ok = file:write(File,Data),
          
