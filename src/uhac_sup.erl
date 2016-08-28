@@ -3,7 +3,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -15,13 +15,18 @@
 %% API functions
 %% ===================================================================
 
-start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+start_link(ExtProg) ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, [ExtProg]).
 
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
 
-init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
+init([ExtProg]) ->
+    UserSpec = [ {uhac_port, {uhac_port, start_link, [ExtProg]},
+                            permanent, 2000, worker, [uhac_port]},{tcp_receiver_sup, {tcp_receiver_sup, start_link, []},
+                            permanent, 2000, worker, [tcp_receiver_sup]},{tcp_receiver_enroll_sup, {tcp_receiver_enroll_sup, start_link, []},
+                            permanent, 2000, worker, [tcp_receiver_enroll_sup]} ],
+       StartSpecs = {{one_for_one, 5, 10}, UserSpec},
+       {ok, StartSpecs}.
 

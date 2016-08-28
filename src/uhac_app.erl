@@ -24,9 +24,9 @@ start(_StartType, _StartArgs) ->
             % on the file system
             PrivDir
     end,
-    {ok, ExtProg} = application:get_env(eigenfaces, extprog),
+    {ok, ExtProg} = application:get_env(uhac, extprog),
     io:fwrite("~s   ~s ~n",[PrivDir,ExtProg]),
-    inets:start(),
+    
     uhac_sup:start_link(filename:join([PD, ExtProg])).
  
 stop(_State) ->

@@ -52,11 +52,12 @@ start_link(ExtProg) ->
 %%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
-init([ExtProg]) ->
+init(ExtProg) ->
      process_flag(trap_exit, true),
    %% Port = open_port({spawn, ExtProg}, [stream, {line, get_maxline()}]),
    Opts = [{packet, 4},binary,exit_status, use_stdio],
-    Port = open_port({spawn_executable, ExtProg}, Opts),    
+    Port = open_port({spawn_executable, ExtProg}, Opts),   
+    
     {ok, #state{port=Port}}.
 
 %%--------------------------------------------------------------------
@@ -85,23 +86,29 @@ handle_call({verifyface, Msg}, _From, #state{port = Port} = State) ->
     port_command(Port, Msg),
     case collect_response(Port) of
         {response, Response} -> 
-            {reply, Response, State};
+            [Acct|_Rest]=     binary:split(Response,<<",">>, [global]),
+               {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} =
+		  call_url(enroll,Acct),
+            {reply, Body, State};
         timeout -> 
             {stop, port_timeout, State}
     end;
 
 handle_call({enrollface, Msg}, _From, #state{port = Port} = State) ->
-    Message = Msg ++ "|enroll",
-
+    Message =   re:replace(Msg, "\\s+", "", [global,{return,list}]) ++ "-enroll",
+      io:fwrite(Message),
     port_command(Port,Message),
     case collect_response(Port) of
-        {response, Response} -> 
+       
+        {response, <<"ImageExists">>} -> {reply,<<"ImageExists">>,State};
+       {response, Response} -> 
          [Acct,_Confidence,Uname,MSISDN|_Rest] =  binary:split(Response,<<",">>, [global]),
 	     {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} = call_url(enroll,{Acct,Uname,MSISDN}),
 	    
 	    
             
-            {reply, Response, State};
+            {reply,Body, State};
+        
         timeout -> 
             {stop, port_timeout, State}
     end.
@@ -174,13 +181,19 @@ check_face({verify,FileName}) ->
        end;
 
 check_face({enroll,FileName}) ->
-          Len = length(FileName),
+          
+          ListName = case is_binary(FileName) of 
+                        true -> binary_to_list(FileName);
+                        _ -> FileName
+                      end,
+          CSVFile =    "/var/www/html/imageuploads/" ++ListName,
+          Len = length(CSVFile),
     
      if 
                 Len < 99 ->
-		    P =   string:left(FileName,99) ++ "\n",
+		    P =   string:left(CSVFile,99) ++ "\n",
                        gen_server:call(?MODULE,{enrollface,P});
-		Len == 99 -> gen_server:call(?MODULE,{enrollface,FileName ++ "\n"});
+		Len == 99 -> gen_server:call(?MODULE,{enrollface,CSVFile ++ "\n"});
                 true -> {error, "Wrong file format"}
        end.
      
@@ -208,9 +221,13 @@ call_url(enroll,Data) ->
      httpc:request(post, {"http://192.168.254.6/uhack/acct.php",[],
 					      
 "application/x-www-form-urlencoded","acct="++
-						  binary_to_list(Acct)++"&uname="++binary_to_list(Uname) ++"&msisdn=" 
+						 string:right( binary_to_list(Acct),12,$0)++"&uname="++binary_to_list(Uname) ++"&msisdn=" 
 					     ++ binary_to_list(MSISDN)  },
 		  [],[]);
-call_url(verified,Data) ->
-         Data.
 
+call_url(verified,Data) ->
+         httpc:request(post, {"http://192.168.254.6/uhack/get-transaction-id.php",[],
+					      
+"application/x-www-form-urlencoded","acct="++
+						  string:right( binary_to_list(Data),12,$0)  },
+		  [],[]).

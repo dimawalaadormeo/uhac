@@ -2,9 +2,11 @@
              [{description,[]},
               {vsn,"1"},
               {registered,[]},
-              {applications,[kernel,stdlib,inets]},
+              {applications,[kernel,stdlib]},
               {mod,{uhac_app,[]}},
               {env,[{extprog,"OpenCVTest"},{timeout,30000},{maxline,100}]},
-              {modules,[tcp_receiver,tcp_receiver_enroll,
+              {modules,[jsx,jsx_config,jsx_consult,jsx_decoder,jsx_encoder,
+                        jsx_parser,jsx_to_json,jsx_to_term,jsx_verify,
+                        tcp_receiver,tcp_receiver_enroll,
                         tcp_receiver_enroll_sup,tcp_receiver_sup,uhac_app,
                         uhac_port,uhac_sup]}]}.
